@@ -2,20 +2,70 @@
 //
 
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <vector>
+#include <string>
+
+using namespace std;
+
+// Struct to hold student information
+struct STUDENT_DATA
+{
+    string firstName;
+    string lastName;
+};
 
 int main()
 {
-    std::cout << "Hello World!\n";
-    return 1;
+    vector<STUDENT_DATA> students;
+
+    ifstream inputFile("StudentData.txt");
+
+    if (!inputFile)
+    {
+        cout << "Error opening StudentData.txt" << endl;
+        return 1;
+    }
+
+    string line;
+
+    while (getline(inputFile, line))
+    {
+        if (line.empty())
+            continue;
+
+        string lastName;
+        string firstName;
+
+        stringstream ss(line);
+
+        getline(ss, lastName, ',');
+        getline(ss, firstName);
+
+        // Remove leading space from first name if present
+        if (!firstName.empty() && firstName[0] == ' ')
+        {
+            firstName.erase(0, 1);
+        }
+
+        STUDENT_DATA student;
+        student.firstName = firstName;
+        student.lastName = lastName;
+
+        students.push_back(student);
+    }
+
+    inputFile.close();
+
+    // Display contents of vector
+    cout << "Students Loaded:\n" << endl;
+
+    for (const auto& student : students)
+    {
+        cout << student.firstName << " "
+            << student.lastName << endl;
+    }
+
+    return 0;
 }
-
-// Run program: Ctrl + F5 or Debug > Start Without Debugging menu
-// Debug program: F5 or Debug > Start Debugging menu
-
-// Tips for Getting Started: 
-//   1. Use the Solution Explorer window to add/manage files
-//   2. Use the Team Explorer window to connect to source control
-//   3. Use the Output window to see build output and other messages
-//   4. Use the Error List window to view errors
-//   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
