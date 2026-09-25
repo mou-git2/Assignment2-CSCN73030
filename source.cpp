@@ -6,7 +6,8 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#define DEBUG 0
+
+
 
 using namespace std;
 
@@ -56,10 +57,12 @@ int main()
 
         students.push_back(student);
 
-        if (DEBUG == 1)
-        {
+#ifdef _DEBUG 
+        
             cout << firstName << ',' << lastName << endl;
-        }
+        
+#endif
+
     }
 
     inputFile.close();
