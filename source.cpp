@@ -54,18 +54,11 @@ int main()
         student.lastName = lastName;
 
         students.push_back(student);
+
+
     }
 
     inputFile.close();
-
-    // Display contents of vector
-    cout << "Students Loaded:\n" << endl;
-
-    for (const auto& student : students)
-    {
-        cout << student.firstName << " "
-            << student.lastName << endl;
-    }
 
     return 0;
 }
