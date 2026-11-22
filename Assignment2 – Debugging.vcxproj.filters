@@ -18,6 +18,9 @@
     <ClCompile Include="source.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="prettyprint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Text Include="StudentData.txt">
@@ -26,5 +29,16 @@
     <Text Include="StudentData_Emails.txt">
       <Filter>Resource Files</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="studentdata.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="prettyprint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="buildconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,46 +1,34 @@
-﻿// Assignment #2 – Debugging vs. Release Coding Practice
-
+// Assignment2 – Debugging.cpp : This file contains the 'main' function.
+// Program execution begins and ends there.
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <vector>
 #include <string>
-#define PRE_RELEASE 
+
+#include "BuildConfig.h"
+#include "StudentData.h"
+#include "PrettyPrint.h"
+
 
 using namespace std;
-
-// Struct to hold student information
-#ifdef PRE_RELEASE
-
-struct STUDENT_DATA
-{
-    string firstName;
-    string lastName;
-    string emailId;
-};
-
-#else
-struct STUDENT_DATA
-{
-    string firstName;
-    string lastName;
-};
-#endif
 
 int main()
 {
 #ifdef PRE_RELEASE
-    
-        cout << "The application is running pre-release source code\n" << endl;
+
+    cout << "The application is running pre-release source code\n" << endl;
+
 #else
-    
-        cout << "The application is running standard source code\n" << endl;
+
+    cout << "The application is running standard source code\n" << endl;
+
 #endif
 
     vector<STUDENT_DATA> students;
 
 #ifdef PRE_RELEASE
-    
+
     ifstream inputFile("StudentData_Emails.txt");
     if (!inputFile)
     {
@@ -57,7 +45,7 @@ int main()
         return 1;
     }
 
-#endif // PRE_RELEASE
+#endif
 
     string line;
 
@@ -70,8 +58,6 @@ int main()
         string firstName;
         string email;
 
-        int unusedCounter = 0;
-
         stringstream ss(line);
 
 #ifdef PRE_RELEASE
@@ -80,10 +66,8 @@ int main()
         getline(ss, firstName, ',');
         getline(ss, email);
 
-        getline(ss, lastName, ',');
-        getline(ss, firstName, ',');
-        getline(ss, email);
 #else
+
         getline(ss, lastName, ',');
         getline(ss, firstName);
 
@@ -91,7 +75,7 @@ int main()
 
         if (!firstName.empty() && firstName[0] == ' ')
         {
-            firstName.erase(0, 5);
+            firstName.erase(0, 1);
         }
 
         STUDENT_DATA student;
@@ -107,18 +91,28 @@ int main()
 #ifdef _DEBUG
 
 #ifdef PRE_RELEASE
+
         cout << firstName << ","
-            << lastName << ","
-            << email << endl;
+             << lastName << ","
+             << email << endl;
+
 #else
+
         cout << firstName << ","
-            << lastName << endl;
+             << lastName << endl;
+
 #endif
 
 #endif
     }
 
     inputFile.close();
+
+#ifndef _DEBUG
+#ifdef PRE_RELEASE
+    PrettyPrint(students);
+#endif
+#endif
 
     return 0;
 }

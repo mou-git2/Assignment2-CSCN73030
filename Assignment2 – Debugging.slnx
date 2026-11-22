@@ -3,5 +3,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="Assignment2 – Debugging.vcxproj" />
+  <Project Path="Assignment2 – Debugging.vcxproj" Id="d88cc18c-98eb-4b65-b5a1-4964d1a972a3" />
+  <Project Path="PrettyPrintTest/PrettyPrintTest.vcxproj" />
 </Solution>
