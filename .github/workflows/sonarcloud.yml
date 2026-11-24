@@ -1,24 +1,168 @@
-name: SonarQube Cloud
+
+name: SonarQube Cloud Analysis
 
 on:
   push:
     branches:
       - master
-
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  sonarcloud:
-    runs-on: ubuntu-latest
+  build-test-and-scan:
+    name: Build, Test and SonarQube Analysis
+    runs-on: windows-latest
+
+    env:
+      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
-      - name: SonarQube Scan
-        uses: SonarSource/sonarqube-scan-action@v6
+      # -------------------------------------------------
+      # 1. Checkout source code
+      # -------------------------------------------------
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      # -------------------------------------------------
+      # 2. Configure Visual Studio build environment
+      # -------------------------------------------------
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
+      - name: Set up VSTest
+        uses: darenm/Setup-VSTest@3a16d909a1f3bbc65b52f8270d475d905e7d3e44 # v1.3
+
+      # -------------------------------------------------
+      # 3. Install OpenCppCoverage
+      # -------------------------------------------------
+
+      - name: Install OpenCppCoverage
+        shell: pwsh
+        run: |
+          $url = "https://github.com/OpenCppCoverage/OpenCppCoverage/releases/download/release-0.9.9.0/OpenCppCoverageSetup-x64-0.9.9.0.exe"
+
+          Invoke-WebRequest -Uri $url -OutFile OpenCppCoverageSetup.exe
+
+          Start-Process -FilePath .\OpenCppCoverageSetup.exe `
+            -ArgumentList "/SUPRESSMSGBOXES /NORESTART /VERYSILENT" `
+            -NoNewWindow -Wait
+
+      # -------------------------------------------------
+      # 4. Install SonarSource Build Wrapper
+      # -------------------------------------------------
+
+      - name: Install Sonar Build Wrapper
+        uses: SonarSource/sonarqube-scan-action/install-build-wrapper@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
+
+      # -------------------------------------------------
+      # 5. Build application with Build Wrapper
+      # -------------------------------------------------
+
+      - name: Build application
+        shell: pwsh
+        run: |
+          $solution = ".\Assignment2 – Debugging.slnx"
+
+          if (!(Test-Path $solution)) {
+            throw "Solution file not found: $solution"
+          }
+
+          build-wrapper-win-x86-64.exe `
+            --out-dir $env:BUILD_WRAPPER_OUT_DIR `
+            msbuild $solution `
+            /t:Rebuild `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /m `
+            /nodeReuse:false
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      # -------------------------------------------------
+      # 6. Build the Visual Studio C++ test project
+      # -------------------------------------------------
+
+      - name: Build unit tests
+        shell: pwsh
+        run: |
+          $testProject = ".\PrettyPrintTest\PrettyPrintTest.vcxproj"
+
+          if (!(Test-Path $testProject)) {
+            throw "Test project not found: $testProject"
+          }
+
+          msbuild $testProject `
+            /t:Rebuild `
+            /p:Configuration=Debug `
+            /p:Platform=x64 `
+            /m `
+            /nodeReuse:false
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+      # -------------------------------------------------
+      # 7. Execute tests and generate coverage.xml
+      # -------------------------------------------------
+
+      - name: Run unit tests and generate coverage
+        shell: pwsh
+        run: |
+          $testAssembly = Get-ChildItem `
+            -Path .\PrettyPrintTest `
+            -Recurse `
+            -Filter PrettyPrintTest.dll `
+            -File |
+            Where-Object {
+              $_.FullName -match '[\\/]x64[\\/]Debug[\\/]'
+            } |
+            Select-Object -First 1
+
+          if (!$testAssembly) {
+            throw "PrettyPrintTest.dll was not found in the x64 Debug output."
+          }
+
+          $coverageTool = "C:\Program Files\OpenCppCoverage\OpenCppCoverage.exe"
+
+          if (!(Test-Path $coverageTool)) {
+            throw "OpenCppCoverage installation not found."
+          }
+
+          & $coverageTool `
+            --cover_children `
+            "--modules=$PWD" `
+            "--sources=$PWD" `
+            --export_type=cobertura:coverage.xml `
+            -- vstest.console.exe $testAssembly.FullName
+
+          if ($LASTEXITCODE -ne 0) {
+            exit $LASTEXITCODE
+          }
+
+          if (!(Test-Path ".\coverage.xml")) {
+            throw "Coverage report was not generated."
+          }
+
+          Write-Host "Coverage report generated successfully."
+
+      # -------------------------------------------------
+      # 8. SonarQube Cloud analysis
+      # -------------------------------------------------
+
+      - name: SonarQube Cloud Scan
+        uses: SonarSource/sonarqube-scan-action@fd88b7d7ccbaefd23d8f36f73b59db7a3d246602 # v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            --define sonar.cfamily.compile-commands=${{ env.BUILD_WRAPPER_OUT_DIR }}/compile_commands.json
