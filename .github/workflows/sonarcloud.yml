@@ -140,6 +140,7 @@ jobs:
 
           & $coverageTool `
             --cover_children `
+            "--modules=$PWD" `
             "--sources=$PWD" `
             --export_type=cobertura:coverage.xml `
             -- vstest.console.exe $testAssembly.FullName
