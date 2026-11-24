@@ -13,6 +13,19 @@
 
 using namespace std;
 
+// Remove newlines and other control characters so user input cannot forge log lines.
+static string SanitizeForLog(const string& value)
+{
+    string cleaned;
+    for (char c : value)
+    {
+        unsigned char u = static_cast<unsigned char>(c);
+        if (u >= 32 && u != 127)
+            cleaned += c;
+    }
+    return cleaned;
+}
+
 int main()
 {
 #ifdef PRE_RELEASE
@@ -92,14 +105,14 @@ int main()
 
 #ifdef PRE_RELEASE
 
-        cout << firstName << ","
-             << lastName << ","
-             << email << endl;
+        cout << SanitizeForLog(firstName) << ","
+             << SanitizeForLog(lastName) << ","
+             << SanitizeForLog(email) << endl;
 
 #else
 
-        cout << firstName << ","
-             << lastName << endl;
+        cout << SanitizeForLog(firstName) << ","
+             << SanitizeForLog(lastName) << endl;
 
 #endif
 
